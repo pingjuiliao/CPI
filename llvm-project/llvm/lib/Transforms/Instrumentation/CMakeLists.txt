@@ -3,6 +3,7 @@ add_llvm_component_library(LLVMInstrumentation
   BoundsChecking.cpp
   CGProfile.cpp
   ControlHeightReduction.cpp
+  CPI.cpp
   DataFlowSanitizer.cpp
   GCOVProfiling.cpp
   MemProfiler.cpp

@@ -17,6 +17,7 @@ add_custom_target(llvm
   COMMAND cd ${LLVM_DIR}/ && rm -rf build
   COMMAND mkdir ${LLVM_DIR}/build
   COMMAND cd ${LLVM_DIR}/build && cmake
+          -DCMAKE_BUILD_TYPE=Release
           -DLLVM_ENABLE_PROJECTS=clang
           -DBUILD_SHARED_LIBS=On
           -DLLVM_BUILD_TOOLS=Off
@@ -27,4 +28,8 @@ add_custom_target(llvm
 )
 
 add_custom_target(llvm-remake
-  COMMAND cd $(LLVM_DIR)/build && make -j${NJOB})
+  COMMAND cd ${LLVM_DIR}/build && make -j${NJOB})
+
+add_subdirectory(lib)
+
+add_subdirectory(unittest)
