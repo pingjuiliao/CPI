@@ -7,8 +7,5 @@
 using namespace llvm;
 
 PreservedAnalyses CPIPass::run(Module &M, ModuleAnalysisManager &AM) {
-  for (auto &F: M) {
-    errs() << F.getName() << "\n";
-  }
   return PreservedAnalyses::all();
 }

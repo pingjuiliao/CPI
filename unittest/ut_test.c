@@ -46,21 +46,52 @@ typedef struct _Printable {
   int (*print_func)(const char*);
 } Printable;
 
-void test_bufovfl(jmp_buf jb) {
+void test_stack_bufovfl(jmp_buf jb) {
   int r = 0;
   Printable ptb;
   ptb.print_func = puts;
-  cpi_protect(&ptb.print_func);
+  cpi_ptr_store(&ptb.print_func);
   printf(" printf_func b4: %p\n", ptb.print_func);
 
   strcpy((char *)&ptb.buffer, "12345678abcdefgh12345678abcdefgh");
   printf(" printf_func after: %p\n", ptb.print_func);
 
-  r = cpi_check(&ptb.print_func);
+  r = cpi_ptr_check(&ptb.print_func);
   if (r == CPI_ERROR) {
     longjmp(jb, 1);
   }
   ptb.print_func((const char *)&ptb.buffer);
+}
+
+void test_heap_bufovfl(jmp_buf jb) {
+  int r = 0;
+  Printable *ptb = (Printable *) malloc(sizeof(struct _Printable));
+  printf("ptb: %p\n", (void *)ptb);
+  ptb->print_func = puts;
+  cpi_ptr_store(&ptb->print_func);
+  printf(" printf_func b4: %p\n", ptb->print_func);
+
+  strcpy((char *)&ptb->buffer, "12345678abcdefg");
+  printf(" printf_func after: %p\n", ptb->print_func);
+  r = cpi_ptr_check(&ptb->print_func);
+  if (r == CPI_ERROR) {
+    longjmp(jb, 1);
+  }
+  ptb->print_func((const char*)&ptb->buffer);
+}
+
+void test_no_ovfl(jmp_buf jb) {
+  int r = 0;
+  Printable* ptb = (Printable *) malloc(sizeof(Printable));
+  ptb->print_func = puts;
+  cpi_ptr_store(&ptb->print_func);
+  
+  strcpy((char *) &ptb->buffer, "1234567");
+  r = cpi_ptr_check(&ptb->print_func);
+  if (r == CPI_ERROR) {
+    longjmp(jb, 1);
+  }
+  ptb->print_func((const char*)&ptb->buffer);
 }
 
 void testcase(void (*func)(jmp_buf), char* name) {
@@ -77,7 +108,9 @@ void testcase(void (*func)(jmp_buf), char* name) {
 int main(int argc, char** argv) {
   // test_init();
   // test_bufovfl();
-  testcase(test_bufovfl, "buffer overflow into code pointer");
+  testcase(test_stack_bufovfl, "buffer overflow on stack");
+  testcase(test_heap_bufovfl, "buffer overflow on heap");
+  testcase(test_no_ovfl, "no overflow, should print string");
   puts("Bye!");
   return 0;
 }
