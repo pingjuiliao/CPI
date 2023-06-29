@@ -43,17 +43,23 @@ int cpi_ptr_store(void* ptr) {
     "shrq $21, %[pd_off];"
     "movq %[ptr], %[pt_off];"
     "andq $0x1fffff, %[pt_off];"
-    "movq %%gs:0x0(%[pd_off]), %[entry];"
-    : [pd_off] "=r"(pd_off),
-      [pt_off] "=r"(pt_off),
+    : [pd_off] "=m"(pd_off),
+      [pt_off] "=m"(pt_off),
       [entry] "=r"(entry)
     : [ptr] "r"(ptr)
   );
+  asm volatile(
+    "movq %%gs:0x0(%[pd_off]), %[entry];"
+    : [entry] "=r"(entry)
+    : [pd_off] "r"(pd_off)
+  );
+
 
   if (entry == 0) {
     entry = mmap(NULL, SUPERPAGE,
                  PROT_READ|PROT_WRITE,
                  MAP_ANONYMOUS|MAP_PRIVATE, 0, 0); 
+    printf("mmap for %p ~ %p\n", ptr, (pd_off << 21) + SUPERPAGE-1);
     asm volatile(
       "movq %[entry], %%gs:0x0(%[pd_off]);"
       : /*no output*/
@@ -102,7 +108,8 @@ int cpi_ptr_check(void* ptr) {
     );
     fprintf(stderr, " before: %p\n", (void *)(before));
     fprintf(stderr, " after : %p\n", *(void **)(ptr));
-    return CPI_ERROR;
+    exit(-1);
+    // return CPI_ERROR;
   }
   return result;
 }
